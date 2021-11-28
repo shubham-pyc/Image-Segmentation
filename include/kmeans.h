@@ -3,11 +3,8 @@
 #include <limits>
 #include <random>
 #include <vector>
-
-struct Point
-{
-	int x{0};
-};
+#include "point.h"
+#include <iostream>
 
 using DataFrame = std::vector<Point>;
 
@@ -23,7 +20,7 @@ int squared_l2_distance(Point first, Point second)
 
 DataFrame k_means(const DataFrame &data,
 				  size_t k,
-				  size_t number_of_iterations)
+				  size_t number_of_iterations, std::vector<size_t> &assign)
 {
 	static std::random_device seed;
 	static std::mt19937 random_number_generator(seed());
@@ -75,6 +72,7 @@ DataFrame k_means(const DataFrame &data,
 			means[cluster].x = new_means[cluster].x / count;
 		}
 	}
+	assign = assignments;
 
 	return means;
 }
