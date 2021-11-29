@@ -1,24 +1,38 @@
-#include "./include/utils.h"
 #include <iostream>
 #include <vector>
+#include <random>
+#include "./include/point.h"
+#include "./include/helpers.h"
+#include "./include/utils.h"
 #include "./include/kmeans.h"
 // #include "./include/image.h"
 
 using namespace std;
-
-int main()
+vector<Point> get_image_vector(Image img)
 {
-    Image img = imread();
     vector<Point> points;
-    vector<size_t> assigments;
-
     for (int i = 0; i < img.height * img.width * img.channels; i++)
     {
         Point p = {.x = img.image[i]};
         points.push_back(p);
     }
+    return points;
+}
 
-    vector<Point> test = k_means(points, 4, 10, assigments);
+int main()
+{
+
+    srand(100);
+
+    Image img = imread();
+    vector<Point> points = get_image_vector(img);
+    vector<size_t> assigments;
+    int k = 3;
+
+    int *means_ = get_initial_means(k, points);
+
+    // vector<Point> test = k_means(points, means_, k, 15, assigments);
+    vector<Point> test = k_means_shared(points, means_, k, 15, assigments);
     uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
     for (int i = 0; i < img.height * img.width * img.channels; i++)
