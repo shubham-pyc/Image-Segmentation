@@ -8,10 +8,15 @@
 // using namespace cv;
 using namespace std;
 
-#define CHANNEL_NUM 3
+#define CHANNEL_NUM 1
 struct Image
 {
 	uint8_t *image;
+
+	uint8_t *r_channel;
+	uint8_t *g_channel;
+	uint8_t *b_channel;
+
 	int height;
 	int width;
 	int channels;
@@ -21,7 +26,7 @@ Image imread()
 {
 	int height, width;
 	int bpp;
-	uint8_t *rgb_image = stbi_load("./include/image.jpg", &width, &height, &bpp, 3);
+	uint8_t *rgb_image = stbi_load("./include/Lena.jpg", &width, &height, &bpp, CHANNEL_NUM);
 	// stbi_image_free(rgb_image);
 	Image img = {.image = rgb_image, .height = height, .width = width, .channels = CHANNEL_NUM};
 	// cout << "Checking" << img.width;
