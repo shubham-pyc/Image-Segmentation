@@ -8,7 +8,7 @@ int square(int value)
     return value * value;
 }
 
-int squared_l2_distance(Point first, Point second)
+int squared_euclidean_distance(Point first, Point second)
 {
     return square(first.x - second.x);
 }
@@ -20,7 +20,6 @@ int get_random_number(float min, float max)
     int r = random * diff;
     return min + r;
 }
-
 
 int *get_initial_means(int k, frame data)
 {

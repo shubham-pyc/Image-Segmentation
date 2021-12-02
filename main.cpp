@@ -31,17 +31,19 @@ int main()
 
     int *means_ = get_initial_means(k, points);
 
-    vector<Point> test = k_means(points, means_, k, 5, assigments);
+    // vector<Point> test = k_means(points, means_, k, 5, assigments);
     // vector<Point> test1 = k_means_shared(points, means_, k, 15, assigments);
+    vector<Point> test = k_means_cuda(points, means_, k, 15, assigments);
 
-    uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
-    for (int i = 0; i < img.height * img.width * img.channels; i++)
-    {
-        newIm[i] = test[assigments[i]].x;
-        cout << (int)newIm[i] << endl;
-        // newIm[i] = img.image[i];
-    }
-    img.image = newIm;
-    imwrite(img);
+    // uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
+
+    // for (int i = 0; i < img.height * img.width * img.channels; i++)
+    // {
+    //     newIm[i] = test[assigments[i]].x;
+    //     cout << (int)newIm[i] << endl;
+    //     // newIm[i] = img.image[i];
+    // }
+    // img.image = newIm;
+    // imwrite(img);
 }

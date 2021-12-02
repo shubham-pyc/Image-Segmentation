@@ -19,3 +19,13 @@ git clone
 g++ main.cpp
 ./a.out
 ```
+
+
+## Linking Cuda file to cPP
+
+```shell
+$ nvcc -arch=sm_20 -c file1.cu
+$ g++ -c file2.cpp
+$ g++ -o test file1.o file2.o -L/usr/local/cuda/lib64 -lcudart
+$ ./test
+```

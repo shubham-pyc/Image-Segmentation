@@ -4,12 +4,15 @@
 #include <random>
 #include <vector>
 #include <iostream>
-#include <omp.h>
+// #include <omp.h>
 
 using namespace std;
 using DataFrame = vector<Point>;
 
 int THREAD_NUM = 4;
+
+DataFrame k_means_cuda(const DataFrame &data, int *means_, size_t k,
+					   size_t number_of_iterations, vector<size_t> &assign);
 
 DataFrame k_means(const DataFrame &data, int *means_,
 				  size_t k,
@@ -28,15 +31,15 @@ DataFrame k_means(const DataFrame &data, int *means_,
 		// Find assignments.
 		for (size_t point = 0; point < data.size(); ++point)
 		{
-			double best_distance = numeric_limits<double>::max();
+			double least_distance = numeric_limits<double>::max();
 			size_t best_cluster = 0;
 			for (size_t cluster = 0; cluster < k; ++cluster)
 			{
 				const int distance =
-					squared_l2_distance(data[point], means[cluster]);
-				if (distance < best_distance)
+					squared_euclidean_distance(data[point], means[cluster]);
+				if (distance < least_distance)
 				{
-					best_distance = distance;
+					least_distance = distance;
 					best_cluster = cluster;
 				}
 			}
@@ -66,7 +69,7 @@ DataFrame k_means(const DataFrame &data, int *means_,
 
 	return means;
 }
-
+/*
 DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 						 size_t number_of_iterations, vector<size_t> &assign)
 {
@@ -109,15 +112,15 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 			for (size_t point = 0; point < data.size(); ++point)
 			{
 
-				double best_distance = numeric_limits<double>::max();
+				double least_distance = numeric_limits<double>::max();
 				size_t best_cluster = 0;
 				for (size_t cluster = 0; cluster < k; ++cluster)
 				{
 					const int distance =
-						squared_l2_distance(data[point], means[cluster]);
-					if (distance < best_distance)
+						squared_euclidean_distance(data[point], means[cluster]);
+					if (distance < least_distance)
 					{
-						best_distance = distance;
+						least_distance = distance;
 						best_cluster = cluster;
 					}
 				}
@@ -166,3 +169,4 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 
 	return means;
 }
+*/
