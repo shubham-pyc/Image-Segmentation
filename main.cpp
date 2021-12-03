@@ -27,23 +27,26 @@ int main()
     Image img = imread();
     vector<Point> points = get_image_vector(img);
     vector<size_t> assigments;
-    int k = 3;
+    int k = 2;
 
     int *means_ = get_initial_means(k, points);
 
-    // vector<Point> test = k_means(points, means_, k, 5, assigments);
-    // vector<Point> test1 = k_means_shared(points, means_, k, 15, assigments);
-    vector<Point> test = k_means_cuda(points, means_, k, 15, assigments);
+    // vector<Point> test = k_means(points, means_, k, 15, assigments);
+    vector<Point> test = k_means_cuda(points, means_, k, 10, assigments);
+    // vector<Point> test = k_means_shared(points, means_, k, 15, assigments);
 
+    // if (test == test1)
+    //     cout << "Worked mf";
+    // else
+    //     cout << "Not working" << test.size() << " " << test1.size() << endl;
 
-    // uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
+    uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
-    // for (int i = 0; i < img.height * img.width * img.channels; i++)
-    // {
-    //     newIm[i] = test[assigments[i]].x;
-    //     cout << (int)newIm[i] << endl;
-    //     // newIm[i] = img.image[i];
-    // }
-    // img.image = newIm;
-    // imwrite(img);
+    for (int i = 0; i < img.height * img.width * img.channels; i++)
+    {
+        newIm[i] = test[assigments[i]].x;
+        // newIm[i] = img.image[i];
+    }
+    img.image = newIm;
+    imwrite(img);
 }

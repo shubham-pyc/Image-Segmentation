@@ -4,7 +4,8 @@
 #include <random>
 #include <vector>
 #include <iostream>
-// #include <omp.h>
+#include <omp.h>
+#include <mpi.h>
 
 using namespace std;
 using DataFrame = vector<Point>;
@@ -18,6 +19,7 @@ DataFrame k_means(const DataFrame &data, int *means_,
 				  size_t k,
 				  size_t number_of_iterations, vector<size_t> &assign)
 {
+
 	DataFrame means;
 	for (int i = 0; i < k; i++)
 	{
@@ -69,7 +71,7 @@ DataFrame k_means(const DataFrame &data, int *means_,
 
 	return means;
 }
-/*
+
 DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 						 size_t number_of_iterations, vector<size_t> &assign)
 {
@@ -169,4 +171,3 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 
 	return means;
 }
-*/
