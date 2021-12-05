@@ -3,11 +3,13 @@
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include "point.h"
-#include <math.h>
+#include <cuda_fp16.h>
 
 using namespace std;
 using DataFrame = vector<Point>;
 int MAX_THREADS = 1024;
+
+__constant__ int HYPER_CLUSTER_RADIUS = 0.5;
 
 __device__ int squared_euclidean_distance(int first, int second)
 {
@@ -32,17 +34,6 @@ __global__ void assign_clusters_to_points(const thrust::device_ptr<int> d_points
 
     if (index >= size)
         return;
-
-    if (index == 0)
-    {
-        for (int i = 0; i < k; i++)
-        {
-            int something = sums[i];
-            int something1 = counts[i];
-            int mean = means[i];
-            printf("Sums: %d, Counts:%d  means: %d\n", something, something1, mean);
-        }
-    }
 
     if (id < k)
     {
@@ -139,8 +130,6 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
             d_new_sums.data(),
             d_counts.data());
         cudaDeviceSynchronize();
-
-        cout << "--------------------X--------------------" << endl;
     }
 
     h_assignments = d_assignments;
@@ -162,4 +151,67 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
 
     // cout  << "Chec"
     return ret_value;
+}
+
+/*
+
+
+
+
+
+*/
+__device__ double equation_cuda(int Xn, int Xi, int r)
+{
+    return expf(((-4 * Xn) - (Xi * Xi)) / (r * r));
+}
+
+__global__ void calculate_potentials(thrust::device_ptr<double> data, thrust::device_ptr<double> output, int size)
+{
+    const int id = threadIdx.x;
+    const int index = blockIdx.x * blockDim.x + id;
+
+    if (index >= size)
+        return;
+
+    const int Xn = data[id];
+
+    double potential = 0;
+    for (int Xi = 0; Xi < size; Xi++)
+    {
+        potential += equation_cuda(Xn, data[Xi], HYPER_CLUSTER_RADIUS);
+    }
+
+    output[index] = potential;
+}
+
+vector<double> get_potentials(DataFrame data)
+{
+    thrust::host_vector<double> h_potent(data.size());
+    thrust::host_vector<double> h_data(data.size());
+
+    thrust::device_vector<double> d_potent(data.size());
+    thrust::device_vector<double> d_data(data.size());
+
+    vector<double> potentials(data.size(), 0);
+    int data_size = data.size();
+
+    for (int i = 0; i < data_size; i++)
+    {
+        h_data[i] = data[i].x;
+    }
+    d_data = h_data;
+
+    dim3 grid((data_size + MAX_THREADS - 1) / MAX_THREADS, 1, 1);
+    dim3 block(MAX_THREADS, 1, 1);
+    calculate_potentials<<<grid, block>>>(d_data.data(), d_potent.data(), data_size);
+    cudaDeviceSynchronize();
+
+    h_potent = d_potent;
+
+    for (int i = 0; i < data_size; i++)
+    {
+        potentials[i] = h_potent[i];
+    }
+
+    return potentials;
 }
