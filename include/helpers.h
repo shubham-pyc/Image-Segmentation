@@ -17,7 +17,7 @@ int squared_euclidean_distance(Point first, Point second)
     return square(first.x - second.x);
 }
 
-int squared_euclidean_distance(int first, int second)
+int squared_euclidean_distance_int(int first, int second)
 {
     return square(first - second);
 }

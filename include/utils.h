@@ -48,3 +48,14 @@ void imwrite(Image img)
 
 	return;
 }
+
+int *convert_to_array(vector<Point> points, int size)
+{
+	int *point_array = new int[size]();
+	for (int i = 0; i < size; i++)
+	{
+		point_array[i] = points[i].x;
+	}
+
+	return point_array;
+}

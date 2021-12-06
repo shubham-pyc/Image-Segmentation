@@ -77,6 +77,7 @@ DataFrame k_means(const DataFrame &data, int *means_,
 			// Avoiding divide by zero
 			const auto count = max<size_t>(1, counts[cluster]);
 			means[cluster].x = new_means[cluster].x / count;
+			// cout << "Iteration " << iteration << " cluster: " << cluster << " init_means: " << means[cluster].x << endl;
 		}
 	}
 	assign = assignments;
@@ -211,18 +212,30 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 		for (int i = 0; i < k; i++)
 			init_means[i] = means_[i];
 	}
-	MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
-	MPI_Bcast(&init_means, k, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+	MPI_Bcast(init_means, k, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&work_per_process, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
+	int data_size = work_per_process * total_processes;
 	int *sub_data = new int[work_per_process];
-	int *assignments = new int[work_per_process];
+	int *local_assignments = new int[work_per_process];
+	int *assignments;
+
+	if (my_rank == 0)
+	{
+		// cout << "Checking data size: " << data_size << " Chcking wpp: " << work_per_process << endl;
+		assignments = new int[data_size];
+	}
 
 	MPI_Scatter(total_data, work_per_process, MPI_INT, sub_data, work_per_process, MPI_INT, 0, MPI_COMM_WORLD);
 
-	for (int i = 0; i < iterations; i++)
+	for (int itr = 0; itr < iterations; itr++)
 	{
+		int *new_means = new int[k]();
+		int *counts = new int[k]();
+		int *gathered_means;
+		int *gathered_counts;
 		// Find the cluster for each cluster
 		for (int point = 0; point < work_per_process; ++point)
 		{
@@ -231,15 +244,71 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 			for (int cluster = 0; cluster < k; ++cluster)
 			{
 				const int distance =
-					squared_euclidean_distance(sub_data[point], init_means[cluster]);
+					squared_euclidean_distance_int(sub_data[point], init_means[cluster]);
 				if (distance < least_distance)
 				{
 					least_distance = distance;
 					best_cluster = cluster;
 				}
 			}
-			assignments[point] = best_cluster;
+			local_assignments[point] = best_cluster;
 		}
+
+		if (my_rank == 0)
+		{
+			gathered_means = new int[k * total_processes]();
+			gathered_counts = new int[k * total_processes]();
+		}
+
+		for (int point = 0; point < work_per_process; ++point)
+		{
+			const auto cluster = local_assignments[point];
+			new_means[cluster] += sub_data[point];
+			counts[cluster] += 1;
+		}
+		//Gather data
+
+		MPI_Gather(new_means, k, MPI_INT, gathered_means, k, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Gather(counts, k, MPI_INT, gathered_counts, k, MPI_INT, 0, MPI_COMM_WORLD);
+
+		if (my_rank == 0)
+		{
+			new_means = new int[k]();
+			counts = new int[k]();
+
+			for (int i = 0; i < k * total_processes; i++)
+			{
+				new_means[i % k] += gathered_means[i];
+				counts[i % k] += gathered_counts[i];
+			}
+
+			for (int cluster = 0; cluster < k; ++cluster)
+			{
+				// Avoiding divide by zero
+				const auto count = max<int>(1, counts[cluster]);
+				init_means[cluster] = new_means[cluster] / count;
+			}
+		}
+		MPI_Bcast(init_means, k, MPI_INT, 0, MPI_COMM_WORLD);
+
+		if (itr == iterations - 1)
+		{
+			MPI_Gather(local_assignments, work_per_process, MPI_INT, assignments, work_per_process, MPI_INT, 0, MPI_COMM_WORLD);
+		}
+	}
+
+	if (my_rank == 0)
+	{
+		for (int i = 0; i < k; i++)
+		{
+			Point p = {.x = init_means[i]};
+			return_value.push_back(p);
+		}
+		for (int i = 0; i < data.size(); i++)
+		{
+			assign.push_back(assignments[i]);
+		}
+		
 	}
 
 	return return_value;
