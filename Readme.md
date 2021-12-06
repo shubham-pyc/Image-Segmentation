@@ -8,24 +8,19 @@ Image segmentation: It's a classification of the image into different groups. Th
 
 K-Means Clustering: Is an unsupervised learning algoritm which would assign the data into k clusters with the nearest mean.
 
+![A test image](./docs/flow.png)
+
 ## Installations
-This is a stand alone project implemented from scratch.
 
 ```shell
-git clone
+git clone https://github.com/shubham-pyc/Image-Segmentation.git
 ```
 
 ```shell
-g++ main.cpp
-./a.out
+./compile
+mpirun -np 4 kmeans.out 1
 ```
 
-
-## Linking Cuda file to cPP
-
-```shell
-$ nvcc -arch=sm_20 -c file1.cu
-$ g++ -c file2.cpp
-$ g++ -o test file1.o file2.o -L/usr/local/cuda/lib64 -lcudart
-$ ./test
-```
+## References
+1. [Exploring K-Means in PYhton,C++ and Cuda](http://www.goldsborough.me/c++/python/cuda/2017/09/10/20-32-46-exploring_k-means_in_python,_c++_and_cuda/)
+2.[Implementing k-means clustering from scratch in C++](https://reasonabledeviations.com/2019/10/02/k-means-in-cpp/) 
