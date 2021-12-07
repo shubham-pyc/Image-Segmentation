@@ -25,13 +25,13 @@ int main(int argc, char *argv[])
     int my_rank, total_processes;
 
     Image img;
+    string imp_type = "cuda";
 
     int k = 2;
     if (argc > 1)
     {
         is_mpi_program = true;
     }
-
     // srand(100);
     if (is_mpi_program)
     {
@@ -64,16 +64,30 @@ int main(int argc, char *argv[])
         vector<Point> points = get_image_vector(img);
         vector<size_t> assigments;
         int *means_ = subtractive_clustering(k, points);
-        // int *means_ = get_initial_means(k, points);
-        vector<Point> test1 = k_means(points, means_, k, 15, assigments);
-        vector<Point> test = k_means_cuda(points, means_, k, 15, assigments);
-        // vector<Point> test = k_means_shared(points, means_, k, 15, assigments);
+        vector<Point> (*k_means_imp)(const DataFrame &, int *, size_t, size_t, vector<size_t> &);
+
+        if (imp_type == "cuda")
+        {
+
+            k_means_imp = &k_means_cuda;
+        }
+        else if (imp_type == "omp")
+        {
+
+            k_means_imp = &k_means_shared;
+        }
+        else
+        {
+            k_means_imp = &k_means;
+        }
+
+        vector<Point> final_means = k_means_imp(points, means_, k, 15, assigments);
 
         uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
         for (int i = 0; i < img.height * img.width * img.channels; i++)
         {
-            newIm[i] = test[assigments[i]].x;
+            newIm[i] = final_means[assigments[i]].x;
             // newIm[i] = img.image[i];
         }
         img.image = newIm;
