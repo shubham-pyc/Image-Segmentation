@@ -106,6 +106,10 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
     thrust::device_vector<int> d_points = h_points;
     thrust::device_vector<int> d_means = h_means;
     thrust::device_vector<int> d_assignments(h_points.size(), 1);
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start);
 
     for (int i = 0; i < number_of_iterations; i++)
     {
@@ -131,6 +135,12 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
             d_counts.data());
         cudaDeviceSynchronize();
     }
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    float milliseconds = 0;
+    cudaEventElapsedTime(&milliseconds, start, stop);
+
+    cout << "Checking cuda calculation time" << milliseconds << endl;
 
     h_assignments = d_assignments;
     h_means = d_means;

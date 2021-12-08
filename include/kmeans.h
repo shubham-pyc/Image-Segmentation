@@ -8,10 +8,13 @@
 #include <mpi.h>
 #include <iterator>
 
+#include <chrono>
 using namespace std;
+using namespace std::chrono;
+
 using DataFrame = vector<Point>;
 
-int THREAD_NUM = 4;
+int THREAD_NUM = 8;
 
 DataFrame k_means_cuda(const DataFrame &data, int *means_, size_t k,
 					   size_t number_of_iterations, vector<size_t> &assign);
@@ -39,6 +42,7 @@ DataFrame k_means(const DataFrame &data, int *means_,
 
 	vector<size_t> assignments(data.size());
 
+	auto start = high_resolution_clock::now();
 	// Iterations
 	for (size_t iteration = 0; iteration < number_of_iterations; ++iteration)
 	{
@@ -68,7 +72,6 @@ DataFrame k_means(const DataFrame &data, int *means_,
 			const auto cluster = assignments[point];
 			new_means[cluster].x += data[point].x;
 			counts[cluster] += 1;
-			// cout << cluster << endl;
 		}
 
 		// Getting new centroids
@@ -77,9 +80,13 @@ DataFrame k_means(const DataFrame &data, int *means_,
 			// Avoiding divide by zero
 			const auto count = max<size_t>(1, counts[cluster]);
 			means[cluster].x = new_means[cluster].x / count;
-			// cout << "Iteration " << iteration << " cluster: " << cluster << " init_means: " << means[cluster].x << endl;
 		}
 	}
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start).count();
+
+	cout << "Checking serial calculation time: " << duration << endl;
+
 	assign = assignments;
 
 	return means;
@@ -107,6 +114,8 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 	}
 
 	vector<size_t> assignments(data.size());
+
+	auto start = high_resolution_clock::now();
 
 	for (size_t iteration = 0; iteration < number_of_iterations; ++iteration)
 	{
@@ -189,6 +198,11 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 		}
 	}
 
+	auto stop = high_resolution_clock::now();
+	auto duration = duration_cast<microseconds>(stop - start).count();
+
+	cout << "Checking omp calculation time: " << duration << endl;
+
 	assign = assignments;
 
 	return means;
@@ -197,6 +211,15 @@ DataFrame k_means_shared(const DataFrame &data, int *means_, size_t k,
 DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 							  size_t number_of_iterations, vector<size_t> &assign)
 {
+	/*
+	MPI distributed memory implementation of k means algorithm
+	Params: 
+		data: vector of pixel data
+		*means_ : initial array of means
+		k: number of centroids
+		number_of_iterations: k means number of iterations
+		assign: vector of assigned clusters of each pixels 
+	*/
 	DataFrame return_value;
 	int my_rank, total_processes;
 	int iterations = number_of_iterations;
@@ -206,12 +229,16 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 	MPI_Comm_size(MPI_COMM_WORLD, &total_processes);
 	int work_per_process = data.size() / total_processes;
 	int *total_data;
+
+	//Converting vector to array to distribute the data
 	if (my_rank == 0)
 	{
 		total_data = convert_to_array(data, data.size());
 		for (int i = 0; i < k; i++)
 			init_means[i] = means_[i];
 	}
+
+	//Broadcasting variables
 	MPI_Bcast(&k, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(&iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
 	MPI_Bcast(init_means, k, MPI_INT, 0, MPI_COMM_WORLD);
@@ -228,7 +255,10 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 		assignments = new int[data_size];
 	}
 
+	//Scattering image through out the processes
 	MPI_Scatter(total_data, work_per_process, MPI_INT, sub_data, work_per_process, MPI_INT, 0, MPI_COMM_WORLD);
+
+	auto start = high_resolution_clock::now();
 
 	for (int itr = 0; itr < iterations; itr++)
 	{
@@ -297,8 +327,14 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 		}
 	}
 
+	auto stop = high_resolution_clock::now();
+
 	if (my_rank == 0)
 	{
+		auto duration = duration_cast<microseconds>(stop - start).count();
+
+		cout << "Checking MPI Calculation time" << duration << endl;
+
 		for (int i = 0; i < k; i++)
 		{
 			Point p = {.x = init_means[i]};
@@ -308,7 +344,6 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 		{
 			assign.push_back(assignments[i]);
 		}
-		
 	}
 
 	return return_value;

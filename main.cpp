@@ -5,9 +5,12 @@
 #include "./include/helpers.h"
 #include "./include/utils.h"
 #include "./include/kmeans.h"
+#include <chrono>
 // #include "./include/image.h"
 
 using namespace std;
+using namespace std::chrono;
+
 vector<Point> get_image_vector(Image img)
 {
     vector<Point> points;
@@ -23,73 +26,72 @@ int main(int argc, char *argv[])
 {
     int is_mpi_program = false;
     int my_rank, total_processes;
+    int *means_;
 
     Image img;
-    string imp_type = "cuda";
 
+    string imp_type = argv[1];
+
+    vector<Point> points;
+    vector<Point> final_means;
+
+    vector<size_t> assigments;
     int k = 2;
-    if (argc > 1)
+    if (imp_type == "mpi")
     {
         is_mpi_program = true;
-    }
-    // srand(100);
-    if (is_mpi_program)
-    {
-        int my_rank, total_processes;
         MPI_Init(NULL, NULL);
         MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
         MPI_Comm_size(MPI_COMM_WORLD, &total_processes);
-        vector<Point> points;
-        vector<size_t> assigments;
-        vector<size_t> assigments_dist;
-
-        int *means_;
-        if (my_rank == 0)
-        {
-            img = imread();
-            points = get_image_vector(img);
-            means_ = subtractive_clustering(k, points);
-        }
-        vector<Point> test = k_means_distributed(points, means_, k, 5, assigments_dist);
-        if (my_rank == 0)
-        {
-            vector<Point> test1 = k_means(points, means_, k, 5, assigments);
-        }
-
-        MPI_Finalize();
     }
     else
     {
+        my_rank = 0;
+    }
+
+    if (my_rank == 0)
+    {
         img = imread();
-        vector<Point> points = get_image_vector(img);
-        vector<size_t> assigments;
-        int *means_ = subtractive_clustering(k, points);
-        vector<Point> (*k_means_imp)(const DataFrame &, int *, size_t, size_t, vector<size_t> &);
+        points = get_image_vector(img);
+        means_ = subtractive_clustering(k, points);
+    }
 
-        if (imp_type == "cuda")
-        {
+    vector<Point> (*k_means_imp)(const DataFrame &, int *, size_t, size_t, vector<size_t> &);
 
-            k_means_imp = &k_means_cuda;
-        }
-        else if (imp_type == "omp")
-        {
+    if (imp_type == "cuda")
+    {
 
-            k_means_imp = &k_means_shared;
-        }
-        else
-        {
-            k_means_imp = &k_means;
-        }
+        k_means_imp = &k_means_cuda;
+    }
+    else if (imp_type == "omp")
+    {
 
-        vector<Point> final_means = k_means_imp(points, means_, k, 15, assigments);
+        k_means_imp = &k_means_shared;
+    }
+    else if (imp_type == "mpi")
+    {
+        k_means_imp = &k_means_distributed;
+    }
+    else
+    {
+        k_means_imp = &k_means;
+    }
+
+    final_means = k_means_imp(points, means_, k, 15, assigments);
+
+    if (is_mpi_program)
+        MPI_Finalize();
+
+    if (my_rank == 0)
+    {
 
         uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
         for (int i = 0; i < img.height * img.width * img.channels; i++)
         {
             newIm[i] = final_means[assigments[i]].x;
-            // newIm[i] = img.image[i];
         }
+
         img.image = newIm;
         imwrite(img);
     }

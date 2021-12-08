@@ -26,7 +26,7 @@ Image imread()
 {
 	int height, width;
 	int bpp;
-	uint8_t *rgb_image = stbi_load("./include/Lena.jpg", &width, &height, &bpp, CHANNEL_NUM);
+	uint8_t *rgb_image = stbi_load("./input_images/Lena.jpg", &width, &height, &bpp, CHANNEL_NUM);
 	// stbi_image_free(rgb_image);
 	Image img = {.image = rgb_image, .height = height, .width = width, .channels = CHANNEL_NUM};
 	// cout << "Checking" << img.width;
