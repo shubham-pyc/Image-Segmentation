@@ -20,6 +20,13 @@ git clone https://github.com/shubham-pyc/Image-Segmentation.git
 ./compile
 ```
 
+## Implementation details k-means
+
+Below are the approaches used to implement the k-means algorithm. For all the implementations initial means were used with subtractive clustering algorithm. (`more details in the paper`)
+1. OMP: For shared memory environment each thread had it's own sum of pixels assigned to clusters and counts of those clusters. Once all the pixels were assigned to their respective clusters. All threads will aggrigated their local counts to finally count the new centroids. (`Implementaion for this can be found at: line 95 ./include/kmeans.h`)
+2. MPI: For distributed memory environment each process has it's own sum of pixels and counts same as MPI. After each iterations all the sums and counts are reduced to node: 0. On node 0 the new centroids are calculated and then again broadcasted. In last iteration the assignments for each pixels are gathered and image is reconstructed.
+3. CUDA: Pixel data is converted to thrust vectors. It's passed to kernel to compute best clusters for each pixel. After that atomicAdd is used to reduce all the allocations. Each block has 1024 threads and number of blocks are = data_size /1024
+
 ## How to run
 There are 4 types of k-means implementations in this project
 1. Serialized 
@@ -61,9 +68,11 @@ mpirun -np 8 ./kmeans mpi #runs the k-means with MPI implemenation with 8 cores
 <img src="./outputs/gray.png" alt="drawing" width="200"/>
 
 ## References
-1. [Exploring K-Means in PYhton,C++ and Cuda](http://www.goldsborough.me/c++/python/cuda/2017/09/10/20-32-46-exploring_k-means_in_python,_c++_and_cuda/)
+1. [Exploring K-Means in Pyhton,C++ and Cuda](http://www.goldsborough.me/c++/python/cuda/2017/09/10/20-32-46-exploring_k-means_in_python,_c++_and_cuda/)
 2. [Implementing k-means clustering from scratch in C++](https://reasonabledeviations.com/2019/10/02/k-means-in-cpp/) 
 3. [Image segmentation using k-means clustering and subtractive clustering algorithms](https://www.sciencedirect.com/science/article/pii/S1877050915014143?via%3Dihub)
+4. [MPI Reduce and Allreduce](https://mpitutorial.com/tutorials/mpi-reduce-and-allreduce/)
+5. [MPI Scatter, Gather, and Allgather](https://mpitutorial.com/tutorials/mpi-scatter-gather-and-allgather/)
 
 
 ## Image References

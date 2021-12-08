@@ -76,8 +76,12 @@ int main(int argc, char *argv[])
     {
         k_means_imp = &k_means;
     }
-
+    auto start = high_resolution_clock::now();
     final_means = k_means_imp(points, means_, k, 15, assigments);
+    auto stop = high_resolution_clock::now();
+    auto duration = duration_cast<microseconds>(stop - start).count();
+    if (my_rank == 0)
+        cout << "Total Application time(" << imp_type << "): " << duration << endl;
 
     if (is_mpi_program)
         MPI_Finalize();

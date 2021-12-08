@@ -286,8 +286,8 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 
 		if (my_rank == 0)
 		{
-			gathered_means = new int[k * total_processes]();
-			gathered_counts = new int[k * total_processes]();
+			gathered_means = new int[k]();
+			gathered_counts = new int[k]();
 		}
 
 		for (int point = 0; point < work_per_process; ++point)
@@ -297,26 +297,17 @@ DataFrame k_means_distributed(const DataFrame &data, int *means_, size_t k,
 			counts[cluster] += 1;
 		}
 		//Gather data
-
-		MPI_Gather(new_means, k, MPI_INT, gathered_means, k, MPI_INT, 0, MPI_COMM_WORLD);
-		MPI_Gather(counts, k, MPI_INT, gathered_counts, k, MPI_INT, 0, MPI_COMM_WORLD);
+		MPI_Reduce(new_means, gathered_means, k, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+		MPI_Reduce(counts, gathered_counts, k, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 
 		if (my_rank == 0)
 		{
-			new_means = new int[k]();
-			counts = new int[k]();
-
-			for (int i = 0; i < k * total_processes; i++)
-			{
-				new_means[i % k] += gathered_means[i];
-				counts[i % k] += gathered_counts[i];
-			}
 
 			for (int cluster = 0; cluster < k; ++cluster)
 			{
 				// Avoiding divide by zero
-				const auto count = max<int>(1, counts[cluster]);
-				init_means[cluster] = new_means[cluster] / count;
+				const auto count = max<int>(1, gathered_counts[cluster]);
+				init_means[cluster] = gathered_means[cluster] / count;
 			}
 		}
 		MPI_Bcast(init_means, k, MPI_INT, 0, MPI_COMM_WORLD);
