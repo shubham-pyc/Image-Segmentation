@@ -27,6 +27,19 @@ __global__ void assign_clusters_to_points(const thrust::device_ptr<int> d_points
 
 )
 {
+    /*
+        Function to calculate the best clusters for the points
+        Param: 
+            d_points: pixel data
+            d_assignments: point for assignments for the image pixel
+            means: initial means
+            sums: sum of the values from the same cluster
+            coutns: coutns for the clusters
+            k: number of clusters
+            size: data size
+            copy_to_assign: on the laster iteration pixels are assigned to 
+                clusters and assigned to global memory
+    */
 
     extern __shared__ int shared_means[];
     const int id = threadIdx.x;
@@ -79,6 +92,17 @@ __global__ void calcualte_new_means(thrust::device_ptr<int> means,
 DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
                        size_t number_of_iterations, vector<size_t> &assign)
 {
+    /*
+        Cuda implementaion for kmeans clustering alogirhtm
+        Param:
+            data: pixel data
+            inital_means: means
+            k: number
+            number_of_iterations: for how long
+            assign: vector points for new assigned clusters
+    */
+
+
     int data_size = data.size();
     thrust::host_vector<int> h_points;
     thrust::host_vector<int> h_assignments(data.size(), 1);
@@ -88,12 +112,12 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
     thrust::device_vector<int> d_new_sums(k);
     thrust::device_vector<int> d_counts(k, 0);
 
-    dim3 grid((data_size + MAX_THREADS - 1) / MAX_THREADS, 1, 1);
 
-    // cout << "Checking: " << (data_size + MAX_THREADS - 1) / MAX_THREADS << endl;
-    // cout << "Data size: " << data.size() << endl;
+    dim3 grid((data_size + MAX_THREADS - 1) / MAX_THREADS, 1, 1);
     dim3 block(MAX_THREADS, 1, 1);
 
+
+    //converting std::vector to thrust
     for (int i = 0; i < data.size(); i++)
     {
         h_points.push_back(data[i].x);
@@ -107,6 +131,7 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
     thrust::device_vector<int> d_means = h_means;
     thrust::device_vector<int> d_assignments(h_points.size(), 1);
     cudaEvent_t start, stop;
+
     cudaEventCreate(&start);
     cudaEventCreate(&stop);
     cudaEventRecord(start);
@@ -118,7 +143,7 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
 
         bool is_last = (i == number_of_iterations - 1) ? true : false;
 
-        assign_clusters_to_points<<<grid, block>>>(
+        assign_clusters_to_points<<<grid, block,k>>>(
             d_points.data(),
             d_assignments.data(),
             d_means.data(),
@@ -163,13 +188,6 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
     return ret_value;
 }
 
-/*
-
-
-
-
-
-*/
 __device__ double equation_cuda(int Xn, int Xi, int r)
 {
     return expf(((-4 * Xn) - (Xi * Xi)) / (r * r));
@@ -196,6 +214,11 @@ __global__ void calculate_potentials(thrust::device_ptr<double> data, thrust::de
 
 vector<double> get_potentials(DataFrame data)
 {
+    /*
+        Implementaions of equation fro getting the potential for a point for being a cluster
+        Param: 
+            data: pixel data
+    */
     thrust::host_vector<double> h_potent(data.size());
     thrust::host_vector<double> h_data(data.size());
 
