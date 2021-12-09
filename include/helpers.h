@@ -9,11 +9,26 @@ using namespace std;
 
 int square(int value)
 {
+    /*
+        Function to square a number
+        param: 
+            int value
+        return:
+            int
+    */
     return value * value;
 }
 
 int squared_euclidean_distance(Point first, Point second)
 {
+
+    /*
+        Function to calculate the euclidean distance between 2 points
+        Param:
+            Point first second
+        Returns:
+            int
+    */
     return square(first.x - second.x);
 }
 
@@ -24,6 +39,13 @@ int squared_euclidean_distance_int(int first, int second)
 
 int get_random_number(float min, float max)
 {
+    /*
+        Function to generate a random number
+        Param:
+            int min,max
+        Returns:
+            int
+    */
     float random = ((float)rand()) / (float)RAND_MAX;
     float diff = max - min;
     int r = random * diff;
@@ -32,6 +54,9 @@ int get_random_number(float min, float max)
 
 int *get_initial_means(int k, frame data)
 {
+    /*
+        Function to calculate initial means
+    */
     int *means = new int[k];
     for (int i = 0; i < k; i++)
     {
@@ -42,6 +67,13 @@ int *get_initial_means(int k, frame data)
 
 double equation(int Xn, int Xi, float r)
 {
+    /*
+        Implementation fo the equation given in paper for subtractive clustering
+        Param:
+            int, xi, xn, and radius
+        Returns
+            double
+    */
     return exp(((-4 * Xn) - (Xi * Xi)) / (r * r));
 }
 
@@ -50,6 +82,12 @@ vector<double> get_potentials(frame data);
 
 int *subtractive_clustering(int k, frame data)
 {
+    /*
+        Implementation of subtractive cluster algothm
+        Param:
+            k: num of means
+            data: pixel data of image
+    */
     int *means = new int[k];
     vector<double> potentials;
     const float hyper_penalty_radius = 0.1;
