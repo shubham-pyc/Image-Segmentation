@@ -118,7 +118,7 @@ DataFrame k_means_cuda(const DataFrame &data, int *initial_means, size_t k,
 
         bool is_last = (i == number_of_iterations - 1) ? true : false;
 
-        assign_clusters_to_points<<<grid, block>>>(
+        assign_clusters_to_points<<<grid, block,k>>>(
             d_points.data(),
             d_assignments.data(),
             d_means.data(),
