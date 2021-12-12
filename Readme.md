@@ -52,7 +52,9 @@ mpirun -np 8 ./kmeans mpi #runs the k-means with MPI implemenation with 8 cores
 ## Code Instructions
 
 1. Changing input file. This can be changed from file (`line 29 /include/utils.h`)
-1. Changing output file. This can be changed from file (`line 47 /include/utils.h`)
+2. Changing output file. This can be changed from file (`line 47 /include/utils.h`)
+3. Changing the HYPER_PENALTY_RADIUS(Rb in paper). This can be changed from file (`line 94 ./include/helpers.h`)
+4. Changing the HYPER_CLUSTER_RADIUS(Ra in paper). This can be changed from file (`line 12 ./include/kmeans.cu`)
 
 
 ## Results
