@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     vector<Point> final_means;
 
     vector<size_t> assigments;
-    int k = 2;
+    int k = 3;
     if (imp_type == "mpi")
     {
         is_mpi_program = true;
@@ -88,12 +88,14 @@ int main(int argc, char *argv[])
 
     if (my_rank == 0)
     {
+        DataFrame reconstructed_image = reconstruct_image(final_means, assigments);
+        DataFrame filtered_image = median_filter_cuda(reconstructed_image, img.width, img.height);
 
         uint8_t *newIm = new uint8_t[img.height * img.width * img.channels];
 
         for (int i = 0; i < img.height * img.width * img.channels; i++)
         {
-            newIm[i] = final_means[assigments[i]].x;
+            newIm[i] = filtered_image[i].x;
         }
 
         img.image = newIm;

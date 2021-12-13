@@ -52,7 +52,9 @@ mpirun -np 8 ./kmeans mpi #runs the k-means with MPI implemenation with 8 cores
 ## Code Instructions
 
 1. Changing input file. This can be changed from file (`line 29 /include/utils.h`)
-1. Changing output file. This can be changed from file (`line 47 /include/utils.h`)
+2. Changing output file. This can be changed from file (`line 47 /include/utils.h`)
+3. Changing the HYPER_PENALTY_RADIUS(Rb in paper). This can be changed from file (`line 94 ./include/helpers.h`)
+4. Changing the HYPER_CLUSTER_RADIUS(Ra in paper). This can be changed from file (`line 12 ./include/kmeans.cu`)
 
 
 ## Results
@@ -66,6 +68,9 @@ mpirun -np 8 ./kmeans mpi #runs the k-means with MPI implemenation with 8 cores
 <br>
 <img src="./input_images/gray.jpeg" alt="drawing" width="200"/>
 <img src="./outputs/gray.png" alt="drawing" width="200"/>
+<br>
+<img src="./input_images/covid.gif" alt="drawing" width="200"/>
+<img src="./outputs/covid.png" alt="drawing" width="200"/>
 
 ## References
 1. [Exploring K-Means in Pyhton,C++ and Cuda](http://www.goldsborough.me/c++/python/cuda/2017/09/10/20-32-46-exploring_k-means_in_python,_c++_and_cuda/)

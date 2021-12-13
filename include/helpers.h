@@ -6,6 +6,7 @@
 
 using frame = std::vector<Point>;
 using namespace std;
+frame median_filter_cuda(const frame &image, int width, int height);
 
 int square(int value)
 {
@@ -113,4 +114,17 @@ int *subtractive_clustering(int k, frame data)
     }
 
     return means;
+}
+
+frame reconstruct_image(frame means, vector<size_t> &assignments)
+{
+    frame ret_value;
+
+    for (int i = 0; i < assignments.size(); i++)
+    {
+        Point p = {.x = means[assignments[i]].x};
+        ret_value.push_back(p);
+    }
+
+    return ret_value;
 }
